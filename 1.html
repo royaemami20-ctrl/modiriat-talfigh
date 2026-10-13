@@ -1,0 +1,470 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>داشبورد بودجه و اعتبارات هرمزگان</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --navy:#102a43; --teal:#08a89d; --bg:#f3f6fa;
+  --text:#26384c; --muted:#7c8ca0; --border:#e5ebf2; --white:#fff;
+}
+* { box-sizing:border-box; }
+body { margin:0; font-family:Vazirmatn,Tahoma,sans-serif; background:var(--bg); color:var(--text); }
+button,input,select { font-family:inherit; }
+.app { display:flex; min-height:100vh; }
+.sidebar { width:230px; background:var(--navy); color:white; padding:22px 16px; flex-shrink:0; }
+.brand { display:flex; align-items:center; gap:10px; padding-bottom:20px; border-bottom:1px solid #ffffff22; }
+.logo { width:44px; height:44px; border-radius:13px; background:var(--teal); display:grid; place-items:center; font-weight:800; font-size:22px; }
+.brand h2 { font-size:13px; margin:0 0 5px; }
+.brand p { color:#b5c7d6; font-size:10px; margin:0; }
+.menu-title { color:#9eb3c5; font-size:10px; margin:25px 10px 10px; }
+.nav { padding:12px; margin:5px 0; border-radius:9px; font-size:12px; color:#d8e3ed; }
+.nav.active { background:#08a89d25; color:#57ded3; }
+.main { flex:1; min-width:0; }
+.topbar { background:white; padding:18px 26px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:15px; }
+.topbar h1 { font-size:17px; color:var(--navy); margin:0 0 6px; }
+.topbar p { font-size:10px; color:var(--muted); margin:0; }
+.content { padding:23px; max-width:1600px; margin:auto; }
+.hero { background:linear-gradient(110deg,#102a43,#176075); color:white; border-radius:15px; padding:23px; margin-bottom:20px; }
+.hero h2 { font-size:17px; margin:0 0 8px; }
+.hero p { font-size:11px; line-height:2; color:#d0e2ec; margin:0; }
+.panel { background:white; border:1px solid var(--border); border-radius:13px; padding:17px; margin-bottom:17px; box-shadow:0 4px 18px #19334d08; }
+.section-title { display:flex; justify-content:space-between; gap:10px; align-items:center; margin:24px 0 13px; }
+.section-title h3 { font-size:13px; margin:0; color:var(--navy); }
+.small { font-size:10px; color:var(--muted); }
+.btn { cursor:pointer; border:0; border-radius:8px; padding:10px 14px; font-size:11px; font-weight:600; }
+.primary { background:var(--teal); color:white; }
+.secondary { background:#edf3f7; color:var(--navy); }
+.upload-area { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:15px; }
+.upload-area h3 { font-size:13px; margin:0 0 7px; }
+.upload-area p { font-size:10px; color:var(--muted); margin:0; line-height:2; }
+.upload-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+input[type=file] { max-width:240px; font-size:11px; }
+.filters { display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:12px; }
+.filter label { display:block; font-size:10px; color:var(--muted); margin-bottom:7px; }
+.filter select,.search { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:white; color:var(--text); font-size:11px; }
+.stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; }
+.stat { background:white; padding:18px; border:1px solid var(--border); border-radius:12px; min-width:0; }
+.stat label { font-size:11px; color:var(--muted); }
+.stat strong { display:block; font-size:23px; color:var(--navy); margin:12px 0 5px; overflow-wrap:anywhere; }
+.stat small { font-size:10px; color:var(--muted); }
+.charts { display:grid; grid-template-columns:1.25fr 1fr; gap:15px; }
+.chart-title { font-size:12px; font-weight:700; margin-bottom:5px; }
+.chart-box { height:280px; position:relative; }
+.table-wrap { overflow:auto; }
+table { border-collapse:collapse; width:100%; white-space:nowrap; font-size:11px; }
+th,td { padding:12px; text-align:right; border-bottom:1px solid #edf1f5; }
+th { background:#f5f8fb; color:#63778c; }
+tr:hover td { background:#f8fbfd; }
+.notice { background:#fff7e5; color:#87601d; border:1px solid #f3e5bd; padding:12px; border-radius:9px; font-size:10px; line-height:2; margin-top:13px; }
+.status { display:inline-block; border-radius:20px; padding:5px 9px; font-size:10px; background:#edf2f7; }
+.footer { text-align:center; color:var(--muted); font-size:10px; padding:20px; line-height:2; }
+@media(max-width:1000px) { .sidebar{width:190px} .stats{grid-template-columns:repeat(2,1fr)} .filters{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:720px) { .app{display:block} .sidebar{width:100%;padding:13px} .sidebar .menu-title,.sidebar .nav{display:none} .topbar{padding:15px;align-items:flex-start;flex-direction:column} .content{padding:13px} .charts{grid-template-columns:1fr} .stats{gap:8px} .stat{padding:12px} .stat strong{font-size:18px} .chart-box{height:250px} }
+</style>
+</head>
+
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">هـ</div>
+      <div><h2>پایش اعتبارات استان</h2><p>هرمزگان | داشبورد مدیریتی</p></div>
+    </div>
+    <div class="menu-title">منوی اصلی</div>
+    <div class="nav active">▦　نمای کلی داشبورد</div>
+    <div class="nav">▤　اعتبارات و تخصیص‌ها</div>
+    <div class="nav">⌂　پروژه‌های شهرستانی</div>
+    <div class="nav">◷　وضعیت اجرای پروژه‌ها</div>
+    <div class="nav">▥　گزارش‌های مدیریتی</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1>داشبورد مدیریت و پایش اعتبارات استان هرمزگان</h1>
+        <p>نمای تحلیلی پروژه‌ها، اعتبارات، تخصیص‌ها و عملکرد مالی</p>
+      </div>
+      <button class="btn secondary" onclick="window.print()">چاپ داشبورد</button>
+    </header>
+
+    <div class="content">
+      <section class="hero">
+        <h2>داشبورد هوشمند بودجه و پروژه‌های عمرانی</h2>
+        <p>فایل اکسل خود را بارگذاری کنید؛ سپس فیلترها، شاخص‌ها، نمودارها و جدول بر اساس داده‌های همان فایل به‌روزرسانی می‌شوند.</p>
+      </section>
+
+      <section class="panel upload-area">
+        <div>
+          <h3>۱. بارگذاری فایل اکسل بودجه</h3>
+          <p>فایل بانک پروژه‌ها را انتخاب کنید. شیت اصلی پیشنهادی: 1400-1404main</p>
+          <p id="fileStatus">هنوز فایلی بارگذاری نشده است.</p>
+        </div>
+        <div class="upload-controls">
+          <input type="file" id="excelFile" accept=".xlsx,.xls,.xlsm">
+          <button class="btn primary" onclick="loadExcel()">خواندن فایل اکسل</button>
+        </div>
+      </section>
+
+      <div class="section-title"><h3>۲. فیلتر اطلاعات</h3><span class="small" id="resultCount">منتظر بارگذاری فایل</span></div>
+      <section class="panel filters">
+        <div class="filter"><label for="year">سال مالی</label><select id="year"><option value="">همه سال‌ها</option></select></div>
+        <div class="filter"><label for="county">شهرستان</label><select id="county"><option value="">همه شهرستان‌ها</option></select></div>
+        <div class="filter"><label for="agency">دستگاه اجرایی</label><select id="agency"><option value="">همه دستگاه‌ها</option></select></div>
+        <div class="filter"><label for="status">وضعیت اجرا</label><select id="status"><option value="">همه وضعیت‌ها</option></select></div>
+        <div class="filter"><label for="source">منبع اعتبار</label><select id="source"><option value="">همه منابع</option></select></div>
+        <div class="filter"><label for="search">جست‌وجوی پروژه</label><input id="search" class="search" placeholder="نام یا کد پروژه..."></div>
+        <div class="filter"><label>پاک کردن فیلترها</label><button class="btn secondary" onclick="resetFilters()">بازنشانی</button></div>
+      </section>
+
+      <div class="section-title"><h3>۳. شاخص‌های کلیدی</h3><span class="small">محاسبه‌شده از ردیف‌های فیلترشده</span></div>
+      <section class="stats">
+        <div class="stat"><label>مجموع اعتبار مبادله‌شده</label><strong id="credit">—</strong><small id="creditUnit">واحد مطابق فایل اکسل</small></div>
+        <div class="stat"><label>تخصیص ۱۲ ماهه نهایی</label><strong id="allocation">—</strong><small>مجموع ستون تخصیص</small></div>
+        <div class="stat"><label>عملکرد نهایی</label><strong id="performance">—</strong><small>مجموع ستون عملکرد</small></div>
+        <div class="stat"><label>تعداد ردیف‌های منطبق</label><strong id="rowsCount">۰</strong><small>تعداد ردیف، نه لزوماً پروژه یکتا</small></div>
+      </section>
+
+      <div class="section-title"><h3>۴. نمودارهای تحلیلی</h3><span class="small">با تغییر فیلترها به‌روز می‌شوند</span></div>
+      <section class="charts">
+        <div class="panel"><div class="chart-title">اعتبار، تخصیص و عملکرد به تفکیک سال</div><div class="chart-box"><canvas id="yearChart"></canvas></div></div>
+        <div class="panel"><div class="chart-title">تعداد ردیف‌ها بر اساس وضعیت اجرا</div><div class="chart-box"><canvas id="statusChart"></canvas></div></div>
+        <div class="panel"><div class="chart-title">اعتبارات به تفکیک شهرستان</div><div class="chart-box"><canvas id="countyChart"></canvas></div></div>
+        <div class="panel"><div class="chart-title">اعتبارات به تفکیک دستگاه اجرایی</div><div class="chart-box"><canvas id="agencyChart"></canvas></div></div>
+      </section>
+
+      <div class="section-title"><h3>۵. جدول پروژه‌ها</h3><button class="btn primary" onclick="exportCSV()">خروجی CSV اطلاعات فیلترشده</button></div>
+      <section class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"><tr><td>ابتدا فایل اکسل را بارگذاری کنید.</td></tr></tbody>
+          </table>
+        </div>
+        <div class="notice">
+          نکته مهم: این داشبورد داده‌های فایل انتخابی را در مرورگر پردازش می‌کند. واحد پولی باید از فایل و مستندات آن تأیید شود.
+          اگر هر پروژه در چند ردیف برای منابع اعتباری مختلف تکرار شده باشد، مجموع ردیف‌ها ممکن است با تعداد پروژه‌های یکتا تفاوت داشته باشد.
+          برای اطلاعات محرمانه، فایل را فقط روی دستگاه مورد اعتماد باز کنید.
+        </div>
+      </section>
+      <footer class="footer">داشبورد تحلیلی بودجه و اعتبارات استان هرمزگان<br>قالب نمایشی مستقل مبتنی بر فایل اکسل کاربر</footer>
+    </div>
+  </main>
+</div>
+
+<script>
+let allRows = [];
+let filteredRows = [];
+let headers = [];
+let columnMap = {};
+let charts = {};
+
+const aliases = {
+  year: ["سال", "سال مالی", "year"],
+  county: ["شهرستان", "نام شهرستان"],
+  agency: ["دستگاه مجری", "دستگاه اجرایی", "نام دستگاه"],
+  status: ["وضعیت اجرا", "وضعیت اجرای پروژه"],
+  source: ["منبع اعتبار", "عنوان منبع", "منبع ابلاغی"],
+  project: ["عنوان پروژه", "نام پروژه"],
+  code: ["کد پروژه", "کدپروژه"],
+  credit: ["اعتبار مبادله‌شده", "اعتبار مبادله شده", "مبلغ اعتبار مبادله‌شده"],
+  allocation: ["تخصیص 12 ماهه نهایی", "تخصیص ۱۲ ماهه نهایی", "تخصیص نهایی", "تخصیص"],
+  performance: ["عملکرد نهایی", "عملکرد پروژه", "عملکرد"]
+};
+
+function norm(s) {
+  return String(s ?? "").trim()
+    .replace(/ي/g,"ی").replace(/ك/g,"ک")
+    .replace(/[يى]/g,"ی").replace(/[\u200c]/g," ")
+    .replace(/\s+/g," ").toLowerCase();
+}
+
+function findColumn(names) {
+  for (const alias of names) {
+    const found = headers.find(h => norm(h) === norm(alias));
+    if (found) return found;
+  }
+  for (const alias of names) {
+    const found = headers.find(h => norm(h).includes(norm(alias)));
+    if (found) return found;
+  }
+  return null;
+}
+
+function val(row, key) {
+  const col = columnMap[key];
+  return col ? row[col] : "";
+}
+
+function num(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  let s = String(value ?? "").trim();
+  if (!s) return 0;
+  const fa = "۰۱۲۳۴۵۶۷۸۹";
+  const ar = "٠١٢٣٤٥٦٧٨٩";
+  s = s.replace(/[۰-۹]/g, d => fa.indexOf(d))
+       .replace(/[٠-٩]/g, d => ar.indexOf(d))
+       .replace(/٬/g, "").replace(/,/g, "").replace(/٫/g, ".");
+  s = s.replace(/[^\d.\-]/g, "");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function fmt(n) {
+  return Number(n || 0).toLocaleString("fa-IR", {maximumFractionDigits:2});
+}
+
+function uniqueValues(key) {
+  const values = allRows.map(r => String(val(r,key) ?? "").trim()).filter(Boolean);
+  return [...new Set(values)].sort((a,b) => a.localeCompare(b,"fa"));
+}
+
+function fillSelect(id, values, firstLabel) {
+  const el = document.getElementById(id);
+  el.innerHTML = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = firstLabel;
+  el.appendChild(first);
+  values.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    el.appendChild(opt);
+  });
+}
+
+function loadExcel() {
+  const input = document.getElementById("excelFile");
+  const file = input.files[0];
+  if (!file) {
+    alert("لطفاً ابتدا فایل اکسل را انتخاب کنید.");
+    return;
+  }
+  if (typeof XLSX === "undefined") {
+    alert("کتابخانه خواندن اکسل بارگذاری نشده است. اتصال اینترنت را بررسی و صفحه را دوباره باز کنید.");
+    return;
+  }
+
+  document.getElementById("fileStatus").textContent = "در حال خواندن فایل...";
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    try {
+      const workbook = XLSX.read(e.target.result, {type:"array", cellDates:false});
+      const preferred = workbook.SheetNames.find(n => norm(n) === norm("1400-1404main"));
+      const sheetName = preferred || workbook.SheetNames.find(n => n.includes("1400-1404")) || workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(sheet, {defval:"", raw:true});
+
+      if (!raw.length) throw new Error("شیت انتخاب‌شده خالی است.");
+
+      allRows = raw;
+      headers = Object.keys(raw[0]);
+      columnMap = {};
+      Object.keys(aliases).forEach(k => columnMap[k] = findColumn(aliases[k]));
+
+      const requiredMissing = [];
+      ["year","county","agency","status","credit","allocation","performance"].forEach(k => {
+        if (!columnMap[k]) requiredMissing.push(k);
+      });
+
+      fillSelect("year", uniqueValues("year"), "همه سال‌ها");
+      fillSelect("county", uniqueValues("county"), "همه شهرستان‌ها");
+      fillSelect("agency", uniqueValues("agency"), "همه دستگاه‌ها");
+      fillSelect("status", uniqueValues("status"), "همه وضعیت‌ها");
+      fillSelect("source", uniqueValues("source"), "همه منابع");
+
+      document.getElementById("fileStatus").textContent =
+        `فایل: ${file.name} | شیت: ${sheetName} | ${fmt(allRows.length)} ردیف خوانده شد`;
+
+      if (requiredMissing.length) {
+        alert("فایل خوانده شد، اما برخی ستون‌ها با نام‌های شناخته‌شده تطبیق پیدا نکردند. ستون‌های موجود:\n" + headers.join("، "));
+      }
+
+      updateDashboard();
+    } catch (err) {
+      console.error(err);
+      document.getElementById("fileStatus").textContent = "خطا در خواندن فایل.";
+      alert("خواندن فایل ناموفق بود: " + err.message);
+    }
+  };
+
+  reader.onerror = () => alert("مرورگر نتوانست فایل را بخواند.");
+  reader.readAsArrayBuffer(file);
+}
+
+function getFiltered() {
+  const f = {
+    year:document.getElementById("year").value,
+    county:document.getElementById("county").value,
+    agency:document.getElementById("agency").value,
+    status:document.getElementById("status").value,
+    source:document.getElementById("source").value,
+    search:norm(document.getElementById("search").value)
+  };
+
+  return allRows.filter(r => {
+    const match = (key, value) => !value || norm(val(r,key)) === norm(value);
+    const searchText = norm([val(r,"project"),val(r,"code"),val(r,"county"),val(r,"agency")].join(" "));
+    return match("year",f.year) && match("county",f.county) &&
+      match("agency",f.agency) && match("status",f.status) &&
+      match("source",f.source) && (!f.search || searchText.includes(f.search));
+  });
+}
+
+function sum(rows,key) {
+  return rows.reduce((total,r) => total + num(val(r,key)), 0);
+}
+
+function groupSum(rows,key,metric) {
+  const out = {};
+  rows.forEach(r => {
+    const label = String(val(r,key) ?? "").trim() || "نامشخص";
+    out[label] = (out[label] || 0) + (metric ? num(val(r,metric)) : 1);
+  });
+  return out;
+}
+
+function destroyChart(id) {
+  if (charts[id]) charts[id].destroy();
+}
+
+function makeChart(id,type,labels,datasets,extra={}) {
+  destroyChart(id);
+  const canvas = document.getElementById(id);
+  charts[id] = new Chart(canvas, {
+    type,
+    data:{labels,datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom", labels:{usePointStyle:true, boxWidth:8, font:{family:"Vazirmatn",size:10}}}},
+      scales:type === "doughnut" ? {} : {
+        x:{grid:{display:false}, ticks:{font:{family:"Vazirmatn",size:10}}},
+        y:{beginAtZero:true, grid:{color:"#edf1f5"}, ticks:{font:{family:"Vazirmatn",size:10}}}
+      },
+      ...extra
+    }
+  });
+}
+
+function updateDashboard() {
+  if (!allRows.length) return;
+  filteredRows = getFiltered();
+
+  document.getElementById("credit").textContent = fmt(sum(filteredRows,"credit"));
+  document.getElementById("allocation").textContent = fmt(sum(filteredRows,"allocation"));
+  document.getElementById("performance").textContent = fmt(sum(filteredRows,"performance"));
+  document.getElementById("rowsCount").textContent = fmt(filteredRows.length);
+  document.getElementById("resultCount").textContent = `${fmt(filteredRows.length)} ردیف از ${fmt(allRows.length)} ردیف`;
+  document.getElementById("creditUnit").textContent = "واحد مطابق فایل اکسل؛ نیازمند تأیید";
+
+  const years = groupSum(filteredRows,"year",null);
+  const yearLabels = Object.keys(years).sort((a,b) => num(a)-num(b));
+  const yearMetric = key => yearLabels.map(y => sum(filteredRows.filter(r => String(val(r,"year"))===y),key));
+
+  makeChart("yearChart","bar",yearLabels,[
+    {label:"اعتبار",data:yearMetric("credit"),backgroundColor:"#173f5f",borderRadius:4},
+    {label:"تخصیص",data:yearMetric("allocation"),backgroundColor:"#08a89d",borderRadius:4},
+    {label:"عملکرد",data:yearMetric("performance"),backgroundColor:"#f2a541",borderRadius:4}
+  ]);
+
+  const statusGroups = groupSum(filteredRows,"status",null);
+  makeChart("statusChart","doughnut",Object.keys(statusGroups),[
+    {label:"تعداد ردیف",data:Object.values(statusGroups),backgroundColor:["#08a89d","#f2a541","#4c82d8","#e46f70","#8c70c8","#7e9aab"]}
+  ]);
+
+  function topGroups(key,metric,limit) {
+    const obj = groupSum(filteredRows,key,metric);
+    return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,limit);
+  }
+
+  const counties = topGroups("county","credit",12);
+  makeChart("countyChart","bar",counties.map(x=>x[0]),[
+    {label:"اعتبار",data:counties.map(x=>x[1]),backgroundColor:"#08a89d",borderRadius:4}
+  ],{indexAxis:"y"});
+
+  const agencies = topGroups("agency","credit",10);
+  makeChart("agencyChart","bar",agencies.map(x=>x[0]),[
+    {label:"اعتبار",data:agencies.map(x=>x[1]),backgroundColor:"#173f5f",borderRadius:4}
+  ],{indexAxis:"y"});
+
+  renderTable();
+}
+
+function renderTable() {
+  const head = document.getElementById("tableHead");
+  const body = document.getElementById("tableBody");
+
+  const preferred = [
+    columnMap.year, columnMap.county, columnMap.project, columnMap.agency,
+    columnMap.source, columnMap.credit, columnMap.allocation,
+    columnMap.performance, columnMap.status
+  ].filter(Boolean);
+
+  const cols = [...new Set(preferred)];
+  const displayCols = cols.length ? cols : headers.slice(0,10);
+
+  head.innerHTML = "<tr>" + displayCols.map(h => `<th>${escapeHTML(h)}</th>`).join("") + "</tr>";
+
+  if (!filteredRows.length) {
+    body.innerHTML = `<tr><td colspan="${displayCols.length}">با این فیلترها داده‌ای پیدا نشد.</td></tr>`;
+    return;
+  }
+
+  const limit = 300;
+  body.innerHTML = filteredRows.slice(0,limit).map(row =>
+    "<tr>" + displayCols.map(h => `<td>${escapeHTML(formatCell(row[h]))}</td>`).join("") + "</tr>"
+  ).join("");
+
+  if (filteredRows.length > limit) {
+    body.innerHTML += `<tr><td colspan="${displayCols.length}">برای سرعت نمایش، فقط ${fmt(limit)} ردیف اول نشان داده شده است؛ خروجی CSV همه ردیف‌های فیلترشده را شامل می‌شود.</td></tr>`;
+  }
+}
+
+function formatCell(v) {
+  if (typeof v === "number") return fmt(v);
+  return String(v ?? "");
+}
+
+function escapeHTML(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function resetFilters() {
+  ["year","county","agency","status","source"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("search").value = "";
+  updateDashboard();
+}
+
+function exportCSV() {
+  if (!filteredRows.length) {
+    alert("داده‌ای برای خروجی وجود ندارد.");
+    return;
+  }
+  const csv = "\uFEFF" + XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(filteredRows));
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "گزارش_فیلترشده_بودجه_هرمزگان.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+["year","county","agency","status","source"].forEach(id =>
+  document.getElementById(id).addEventListener("change",updateDashboard)
+);
+document.getElementById("search").addEventListener("input",updateDashboard);
+</script>
+</body>
+</html>
